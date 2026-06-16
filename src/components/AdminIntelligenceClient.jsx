@@ -1,13 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-import { Users, TrendingUp, MapPin, Search, Target, Monitor, Share2, MousePointer2, Clock, Filter, Activity, Download, PieChart as PieChartIcon } from 'lucide-react';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { Users, TrendingUp, MapPin, Search, Target, Monitor, Share2, MousePointer2, Clock, Filter, Activity, Download, PieChart as PieChartIcon, RefreshCw } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 export default function AdminIntelligenceClient({ initialVisitors, initialSessions, initialEvents = [] }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVisitorId, setSelectedVisitorId] = useState(null);
+
+  const handleRefresh = () => {
+    startTransition(() => {
+      router.refresh();
+    });
+  };
 
   // Derived metrics
   const totalVisitors = initialVisitors.length;
@@ -151,8 +160,19 @@ export default function AdminIntelligenceClient({ initialVisitors, initialSessio
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1 className="font-script" style={{ fontSize: '3rem' }}>Customer Intelligence</h1>
-        <div style={{ background: 'rgba(212, 175, 55, 0.1)', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '8px 16px', borderRadius: '20px', fontSize: '0.9rem' }}>
-          Microsoft Clarity Integration Active
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <button 
+            onClick={handleRefresh} 
+            disabled={isPending}
+            className="btn-outline" 
+            style={{ padding: '8px 16px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', opacity: isPending ? 0.5 : 1, cursor: isPending ? 'not-allowed' : 'pointer' }}
+          >
+            <RefreshCw size={16} className={isPending ? "animate-spin" : ""} /> 
+            {isPending ? 'Syncing...' : 'Refresh Live Data'}
+          </button>
+          <div style={{ background: 'rgba(212, 175, 55, 0.1)', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '8px 16px', borderRadius: '20px', fontSize: '0.9rem' }}>
+            Microsoft Clarity Integration Active
+          </div>
         </div>
       </div>
 
