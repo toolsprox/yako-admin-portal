@@ -104,7 +104,17 @@ export default function AdminIntelligenceClient({ initialVisitors, initialSessio
             </div>
             <div style={{ background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '8px' }}>
               <div style={{ color: '#A1A1AA', fontSize: '0.9rem', marginBottom: '5px' }}>Location</div>
-              <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{visitor.geo_city ? `${visitor.geo_city}, ${visitor.geo_country}` : 'Unknown'}</div>
+              <div style={{ fontWeight: 600, fontSize: '1.1rem', marginBottom: '8px' }}>{visitor.geo_city ? `${visitor.geo_city}, ${visitor.geo_country}` : 'Unknown'}</div>
+              {visitor.geo_lat && visitor.geo_lng && (
+                <a 
+                  href={`https://www.google.com/maps?q=${visitor.geo_lat},${visitor.geo_lng}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem', color: '#10b981', textDecoration: 'none', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}
+                >
+                  <MapPin size={12} /> View Exact Location on Map
+                </a>
+              )}
             </div>
             <div style={{ background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '8px' }}>
               <div style={{ color: '#A1A1AA', fontSize: '0.9rem', marginBottom: '5px' }}>Lead Score</div>
