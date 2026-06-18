@@ -7,22 +7,35 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
   const [promotions, setPromotions] = useState(initialPromotions || []);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const supabase = createBrowserSupabaseClient();
 
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    promo_type: 'popup',
-    content: {
-      title: '',
-      subtitle: '',
-      button_text: '',
-      button_link: '',
-      image_url: ''
-    },
-    triggers: [{ type: 'global', value: '' }],
-    is_active: true
-  });
+  const emptyForm = {
+    name: '', promo_type: 'popup', 
+    content: { title: '', subtitle: '', button_text: '', button_link: '', image_url: '' },
+    triggers: [{ type: 'global', value: '' }], is_active: true
+  };
+
+  const [formData, setFormData] = useState(emptyForm);
+
+  const handleAddNew = () => {
+    setEditingId(null);
+    setFormData(emptyForm);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (promo) => {
+    setEditingId(promo.id);
+    setFormData({
+      name: promo.name,
+      promo_type: promo.promo_type,
+      content: promo.content || emptyForm.content,
+      triggers: promo.triggers || emptyForm.triggers,
+      is_active: promo.is_active
+    });
+    setIsModalOpen(true);
+  };
 
   const handleAddTrigger = () => {
     setFormData({ ...formData, triggers: [...formData.triggers, { type: 'path', value: '' }] });
@@ -43,30 +56,76 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
     setFormData({ ...formData, content: { ...formData.content, [field]: value } });
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `promotions/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('promotion-assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('promotion-assets')
+        .getPublicUrl(filePath);
+
+      handleContentChange('image_url', publicUrl);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { data, error } = await supabase
-        .from('site_promotions')
-        .insert([{
-          name: formData.name,
-          promo_type: formData.promo_type,
-          content: formData.content,
-          triggers: formData.triggers,
-          is_active: formData.is_active
-        }])
-        .select()
-        .single();
+      if (editingId) {
+        // UPDATE
+        const { data, error } = await supabase
+          .from('site_promotions')
+          .update({
+            name: formData.name,
+            promo_type: formData.promo_type,
+            content: formData.content,
+            triggers: formData.triggers,
+            is_active: formData.is_active
+          })
+          .eq('id', editingId)
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
+        setPromotions(promotions.map(p => p.id === editingId ? data : p));
+      } else {
+        // INSERT
+        const { data, error } = await supabase
+          .from('site_promotions')
+          .insert([{
+            name: formData.name,
+            promo_type: formData.promo_type,
+            content: formData.content,
+            triggers: formData.triggers,
+            is_active: formData.is_active
+          }])
+          .select()
+          .single();
 
-      setPromotions([data, ...promotions]);
+        if (error) throw error;
+        setPromotions([data, ...promotions]);
+      }
+
       setIsModalOpen(false);
-      setFormData({
-        name: '', promo_type: 'popup', 
-        content: { title: '', subtitle: '', button_text: '', button_link: '', image_url: '' },
-        triggers: [{ type: 'global', value: '' }], is_active: true
-      });
+      setFormData(emptyForm);
+      setEditingId(null);
     } catch (e) {
       console.error("Error saving promotion:", e);
       alert("Failed to save promotion.");
@@ -94,7 +153,7 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
           <p style={{ color: '#A1A1AA' }}>Launch popups, top banners, and visual effects dynamically across the site.</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleAddNew}
           style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
         >
           + Add Promotion
@@ -108,7 +167,7 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
               <th style={{ padding: '15px 20px' }}>Name</th>
               <th style={{ padding: '15px 20px' }}>Type</th>
               <th style={{ padding: '15px 20px' }}>Triggers</th>
-              <th style={{ padding: '15px 20px' }}>Status</th>
+              <th style={{ padding: '15px 20px', textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -123,7 +182,13 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
                     </div>
                   ))}
                 </td>
-                <td style={{ padding: '15px 20px' }}>
+                <td style={{ padding: '15px 20px', textAlign: 'right' }}>
+                  <button 
+                    onClick={() => handleEdit(promo)}
+                    style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.8rem', marginRight: '8px' }}
+                  >
+                    Edit
+                  </button>
                   <button 
                     onClick={() => toggleStatus(promo.id, promo.is_active)}
                     style={{ background: promo.is_active ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: promo.is_active ? '#22c55e' : '#ef4444', border: '1px solid', borderColor: promo.is_active ? '#22c55e' : '#ef4444', padding: '4px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.8rem' }}
@@ -145,7 +210,7 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
       {isModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '30px', position: 'relative' }}>
-            <h2 style={{ marginBottom: '20px' }}>Add New Promotion</h2>
+            <h2 style={{ marginBottom: '20px' }}>{editingId ? 'Edit Promotion' : 'Add New Promotion'}</h2>
             
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.9rem' }}>Campaign Name (Internal)</label>
@@ -189,8 +254,25 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
 
                 {formData.promo_type === 'popup' && (
                   <div>
-                    <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.85rem' }}>Image URL (Optional)</label>
-                    <input type="text" value={formData.content.image_url} onChange={e => handleContentChange('image_url', e.target.value)} placeholder="https://..." style={{ width: '100%', background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
+                    <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.85rem' }}>Hero Image</label>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload} 
+                        disabled={isUploading}
+                        style={{ background: '#374151', color: '#fff', padding: '8px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer' }} 
+                      />
+                      {isUploading && <span style={{ fontSize: '0.8rem', color: 'var(--primary)' }}>Uploading...</span>}
+                    </div>
+                    {formData.content.image_url && (
+                      <div style={{ marginTop: '10px' }}>
+                        <img src={formData.content.image_url} alt="Preview" style={{ height: '60px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)' }} />
+                        <div style={{ fontSize: '0.7rem', color: '#A1A1AA', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {formData.content.image_url}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -232,8 +314,8 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSave} disabled={isSaving || !formData.name} style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', opacity: (isSaving || !formData.name) ? 0.5 : 1 }}>
-                {isSaving ? 'Saving...' : 'Launch Promotion'}
+              <button onClick={handleSave} disabled={isSaving || !formData.name || isUploading} style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', opacity: (isSaving || !formData.name || isUploading) ? 0.5 : 1 }}>
+                {isSaving ? 'Saving...' : editingId ? 'Update Promotion' : 'Launch Promotion'}
               </button>
             </div>
           </div>

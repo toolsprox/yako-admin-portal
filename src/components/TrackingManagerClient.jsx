@@ -7,16 +7,32 @@ export default function TrackingManagerClient({ initialScripts, discoveredPaths 
   const [scripts, setScripts] = useState(initialScripts || []);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const supabase = createBrowserSupabaseClient();
 
-  // Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    provider: 'ga4',
-    tracking_code: '',
-    triggers: [{ type: 'global', value: '' }],
-    is_active: true
-  });
+  const emptyForm = {
+    name: '', provider: 'google_analytics', tracking_code: '', triggers: [{ type: 'global', value: '' }], is_active: true
+  };
+
+  const [formData, setFormData] = useState(emptyForm);
+
+  const handleAddNew = () => {
+    setEditingId(null);
+    setFormData(emptyForm);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (script) => {
+    setEditingId(script.id);
+    setFormData({
+      name: script.name,
+      provider: script.provider,
+      tracking_code: script.tracking_code,
+      triggers: script.triggers || emptyForm.triggers,
+      is_active: script.is_active
+    });
+    setIsModalOpen(true);
+  };
 
   const handleAddTrigger = () => {
     setFormData({ ...formData, triggers: [...formData.triggers, { type: 'path', value: '' }] });
@@ -36,27 +52,46 @@ export default function TrackingManagerClient({ initialScripts, discoveredPaths 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { data, error } = await supabase
-        .from('tracking_scripts')
-        .insert([{
-          name: formData.name,
-          provider: formData.provider,
-          tracking_code: formData.tracking_code,
-          triggers: formData.triggers,
-          is_active: formData.is_active
-        }])
-        .select()
-        .single();
+      if (editingId) {
+        // UPDATE
+        const { data, error } = await supabase
+          .from('tracking_scripts')
+          .update({
+            name: formData.name,
+            provider: formData.provider,
+            tracking_code: formData.tracking_code,
+            triggers: formData.triggers,
+            is_active: formData.is_active
+          })
+          .eq('id', editingId)
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
+        setScripts(scripts.map(s => s.id === editingId ? data : s));
+      } else {
+        // INSERT
+        const { data, error } = await supabase
+          .from('tracking_scripts')
+          .insert([{
+            name: formData.name,
+            provider: formData.provider,
+            tracking_code: formData.tracking_code,
+            triggers: formData.triggers,
+            is_active: formData.is_active
+          }])
+          .select()
+          .single();
 
-      setScripts([data, ...scripts]);
+        if (error) throw error;
+        setScripts([data, ...scripts]);
+      }
+
       setIsModalOpen(false);
-      setFormData({
-        name: '', provider: 'ga4', tracking_code: '', triggers: [{ type: 'global', value: '' }], is_active: true
-      });
+      setFormData(emptyForm);
+      setEditingId(null);
     } catch (e) {
-      console.error("Error saving script:", e);
+      console.error("Error saving tracking script:", e);
       alert("Failed to save tracking script.");
     } finally {
       setIsSaving(false);
@@ -79,10 +114,10 @@ export default function TrackingManagerClient({ initialScripts, discoveredPaths 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <div>
           <h1 style={{ marginBottom: '10px' }}>Tracking & Ads Manager</h1>
-          <p style={{ color: '#A1A1AA' }}>Dynamically inject GA4, Meta Pixels, and custom scripts into your platform.</p>
+          <p style={{ color: '#A1A1AA' }}>Dynamically inject GA4, Meta Pixels, and custom scripts into the live website without changing code.</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleAddNew}
           style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
         >
           + Add Tracker
@@ -96,7 +131,7 @@ export default function TrackingManagerClient({ initialScripts, discoveredPaths 
               <th style={{ padding: '15px 20px' }}>Name</th>
               <th style={{ padding: '15px 20px' }}>Provider</th>
               <th style={{ padding: '15px 20px' }}>Triggers</th>
-              <th style={{ padding: '15px 20px' }}>Status</th>
+              <th style={{ padding: '15px 20px', textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -111,7 +146,13 @@ export default function TrackingManagerClient({ initialScripts, discoveredPaths 
                     </div>
                   ))}
                 </td>
-                <td style={{ padding: '15px 20px' }}>
+                <td style={{ padding: '15px 20px', textAlign: 'right' }}>
+                  <button 
+                    onClick={() => handleEdit(script)}
+                    style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.8rem', marginRight: '8px' }}
+                  >
+                    Edit
+                  </button>
                   <button 
                     onClick={() => toggleStatus(script.id, script.is_active)}
                     style={{ background: script.is_active ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: script.is_active ? '#22c55e' : '#ef4444', border: '1px solid', borderColor: script.is_active ? '#22c55e' : '#ef4444', padding: '4px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.8rem' }}
@@ -133,31 +174,30 @@ export default function TrackingManagerClient({ initialScripts, discoveredPaths 
       {isModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '30px', position: 'relative' }}>
-            <h2 style={{ marginBottom: '20px' }}>Add Tracking Script</h2>
+            <h2 style={{ marginBottom: '20px' }}>{editingId ? 'Edit Tracking Script' : 'Add Tracking Script'}</h2>
             
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.9rem' }}>Tracker Name</label>
               <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. FB Pixel Main" style={{ width: '100%', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '6px' }} />
             </div>
 
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.9rem' }}>Provider</label>
-              <select value={formData.provider} onChange={e => setFormData({...formData, provider: e.target.value})} style={{ width: '100%', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '6px' }}>
-                <option value="ga4">Google Analytics (GA4)</option>
-                <option value="fbpixel">Meta / Facebook Pixel</option>
-                <option value="custom_html">Custom HTML / Script Snippet</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.9rem' }}>
-                {formData.provider === 'custom_html' ? 'Raw HTML Snippet' : 'Tracking ID (e.g. G-XXXX, AW-XXXX, or Pixel ID)'}
-              </label>
-              {formData.provider === 'custom_html' ? (
-                <textarea rows={4} value={formData.tracking_code} onChange={e => setFormData({...formData, tracking_code: e.target.value})} placeholder="<script>...</script>" style={{ width: '100%', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '6px', fontFamily: 'monospace' }} />
-              ) : (
-                <input type="text" value={formData.tracking_code} onChange={e => setFormData({...formData, tracking_code: e.target.value})} placeholder="ID" style={{ width: '100%', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '6px' }} />
-              )}
+            <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.9rem' }}>Provider</label>
+                <select value={formData.provider} onChange={e => setFormData({...formData, provider: e.target.value})} style={{ width: '100%', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '6px' }}>
+                  <option value="google_analytics">Google Analytics (GA4)</option>
+                  <option value="meta_pixel">Meta (Facebook) Pixel</option>
+                  <option value="custom_html">Custom HTML/JS Script</option>
+                </select>
+              </div>
+              <div style={{ flex: 2 }}>
+                <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.9rem' }}>ID or Script Code</label>
+                {formData.provider === 'custom_html' ? (
+                  <textarea value={formData.tracking_code} onChange={e => setFormData({...formData, tracking_code: e.target.value})} placeholder="<script>...</script>" rows={4} style={{ width: '100%', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '6px', fontFamily: 'monospace' }} />
+                ) : (
+                  <input type="text" value={formData.tracking_code} onChange={e => setFormData({...formData, tracking_code: e.target.value})} placeholder={formData.provider === 'google_analytics' ? 'G-XXXXXXXXXX' : 'e.g. 1234567890'} style={{ width: '100%', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '6px' }} />
+                )}
+              </div>
             </div>
 
             <div style={{ marginBottom: '20px', background: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -208,7 +248,7 @@ export default function TrackingManagerClient({ initialScripts, discoveredPaths 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
               <button onClick={handleSave} disabled={isSaving || !formData.name || !formData.tracking_code} style={{ background: 'var(--primary)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', opacity: (isSaving || !formData.name || !formData.tracking_code) ? 0.5 : 1 }}>
-                {isSaving ? 'Saving...' : 'Save Tracker'}
+                {isSaving ? 'Saving...' : editingId ? 'Update Tracker' : 'Save Tracker'}
               </button>
             </div>
           </div>
