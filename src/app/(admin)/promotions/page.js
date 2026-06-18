@@ -16,16 +16,21 @@ export default async function PromotionsManagerPage() {
     console.error("Error fetching site promotions:", error);
   }
 
-  // Fetch recent analytics to extract discovered paths for the dropdown
   const { data: sessions } = await supabase.from('intelligence_sessions').select('landing_page').limit(500);
+  const { data: cmsPages } = await supabase.from('pages').select('slug');
   
-  const discoveredPaths = [...new Set(sessions?.map(s => {
+  const analyticsPaths = sessions?.map(s => {
     try {
       return new URL(s.landing_page).pathname;
     } catch {
       return s.landing_page.startsWith('/') ? s.landing_page : null;
     }
-  }).filter(Boolean) || [])];
+  }).filter(Boolean) || [];
+
+  const customPaths = cmsPages?.map(p => p.slug) || [];
+  const staticPaths = ['/', '/menu', '/gallery', '/about', '/book'];
+
+  const discoveredPaths = [...new Set([...staticPaths, ...customPaths, ...analyticsPaths])];
 
   return (
     <PromotionsManagerClient 

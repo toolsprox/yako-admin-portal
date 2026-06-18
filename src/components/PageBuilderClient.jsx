@@ -157,6 +157,12 @@ export default function PageBuilderClient({ initialPages }) {
         </button>
       </div>
 
+      <datalist id="available-paths">
+        {['/', '/menu', '/gallery', '/about', '/book', ...pages.map(p => p.slug)].map((path, i) => (
+          <option key={i} value={path}>{path}</option>
+        ))}
+      </datalist>
+
       <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -257,7 +263,7 @@ export default function PageBuilderClient({ initialPages }) {
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <input type="text" value={block.data.title} onChange={e => handleUpdateBlock(index, 'title', e.target.value)} placeholder="CTA Title" style={{ flex: 1, background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
                     <input type="text" value={block.data.button_text} onChange={e => handleUpdateBlock(index, 'button_text', e.target.value)} placeholder="Button Text" style={{ flex: 1, background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
-                    <input type="text" value={block.data.button_link} onChange={e => handleUpdateBlock(index, 'button_link', e.target.value)} placeholder="Button URL (/book)" style={{ flex: 1, background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
+                    <input type="text" list="available-paths" value={block.data.button_link} onChange={e => handleUpdateBlock(index, 'button_link', e.target.value)} placeholder="Button URL (/book)" style={{ flex: 1, background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
                   </div>
                 )}
 
