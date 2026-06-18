@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createBrowserSupabaseClient } from '@/lib/supabase-browser';
 
-export default function TrackingManagerClient({ initialScripts }) {
+export default function TrackingManagerClient({ initialScripts, discoveredPaths = [], discoveredEvents = [] }) {
   const [scripts, setScripts] = useState(initialScripts || []);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -178,11 +178,9 @@ export default function TrackingManagerClient({ initialScripts }) {
                     <>
                       <input type="text" list="path-options" value={trigger.value} onChange={e => handleUpdateTrigger(index, 'value', e.target.value)} placeholder="Select or type a path (e.g. /menu)" style={{ flex: 1, background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
                       <datalist id="path-options">
-                        <option value="/">Home</option>
-                        <option value="/menu">Menu</option>
-                        <option value="/book">Reservations</option>
-                        <option value="/gallery">Gallery</option>
-                        <option value="/about">About Us</option>
+                        {discoveredPaths.map((path, i) => (
+                          <option key={i} value={path}>{path}</option>
+                        ))}
                       </datalist>
                     </>
                   )}
@@ -190,11 +188,9 @@ export default function TrackingManagerClient({ initialScripts }) {
                     <>
                       <input type="text" list="event-options" value={trigger.value} onChange={e => handleUpdateTrigger(index, 'value', e.target.value)} placeholder="Select or type an event (e.g. reservation_complete)" style={{ flex: 1, background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
                       <datalist id="event-options">
-                        <option value="page_view">Page View</option>
-                        <option value="reservation_start">Reservation Started</option>
-                        <option value="reservation_complete">Reservation Completed</option>
-                        <option value="whatsapp_click">WhatsApp Clicked</option>
-                        <option value="menu_view">Menu Viewed</option>
+                        {discoveredEvents.map((evt, i) => (
+                          <option key={i} value={evt}>{evt}</option>
+                        ))}
                       </datalist>
                     </>
                   )}
