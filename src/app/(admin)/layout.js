@@ -21,6 +21,7 @@ export default async function AdminLayout({ children }) {
             <a href="/" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Reservations</a>
             <a href="/menu" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Menu</a>
             <a href="/content" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Site Content</a>
+            <a href="/pages" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Pages</a>
             <a href="/intelligence" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Intelligence</a>
             <a href="/tracking" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Tracking & Ads</a>
             <a href="/promotions" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Promotions</a>
