@@ -145,6 +145,24 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to permanently delete this promotion?")) return;
+    
+    try {
+      const { error } = await supabase
+        .from('site_promotions')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      setPromotions(promotions.filter(p => p.id !== id));
+    } catch (e) {
+      console.error("Error deleting promotion:", e);
+      alert("Failed to delete promotion.");
+    }
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
@@ -191,9 +209,15 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
                   </button>
                   <button 
                     onClick={() => toggleStatus(promo.id, promo.is_active)}
-                    style={{ background: promo.is_active ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: promo.is_active ? '#22c55e' : '#ef4444', border: '1px solid', borderColor: promo.is_active ? '#22c55e' : '#ef4444', padding: '4px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    style={{ background: promo.is_active ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: promo.is_active ? '#22c55e' : '#ef4444', border: '1px solid', borderColor: promo.is_active ? '#22c55e' : '#ef4444', padding: '4px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.8rem', marginRight: '8px' }}
                   >
                     {promo.is_active ? 'Active' : 'Inactive'}
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(promo.id)}
+                    style={{ background: 'transparent', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.5)', padding: '4px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.8rem' }}
+                  >
+                    Delete
                   </button>
                 </td>
               </tr>
@@ -254,23 +278,22 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
 
                 {formData.promo_type === 'popup' && (
                   <div>
-                    <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.85rem' }}>Hero Image</label>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.85rem' }}>Hero Image (Upload or Paste URL)</label>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
+                      <input type="text" value={formData.content.image_url} onChange={e => handleContentChange('image_url', e.target.value)} placeholder="https://..." style={{ flex: 1, background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
+                      <span style={{ color: '#A1A1AA', fontSize: '0.8rem' }}>OR</span>
                       <input 
                         type="file" 
                         accept="image/*" 
                         onChange={handleImageUpload} 
                         disabled={isUploading}
-                        style={{ background: '#374151', color: '#fff', padding: '8px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer' }} 
+                        style={{ background: '#374151', color: '#fff', padding: '8px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', maxWidth: '150px' }} 
                       />
                       {isUploading && <span style={{ fontSize: '0.8rem', color: 'var(--primary)' }}>Uploading...</span>}
                     </div>
                     {formData.content.image_url && (
                       <div style={{ marginTop: '10px' }}>
                         <img src={formData.content.image_url} alt="Preview" style={{ height: '60px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)' }} />
-                        <div style={{ fontSize: '0.7rem', color: '#A1A1AA', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {formData.content.image_url}
-                        </div>
                       </div>
                     )}
                   </div>
