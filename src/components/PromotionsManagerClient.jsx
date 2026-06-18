@@ -13,7 +13,7 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
 
   const emptyForm = {
     name: '', promo_type: 'popup', 
-    content: { title: '', subtitle: '', button_text: '', button_link: '', image_url: '' },
+    content: { title: '', subtitle: '', button_text: '', button_link: '', image_url: '', timing: 'immediate', countdown_date: '' },
     triggers: [{ type: 'global', value: '' }], is_active: true
   };
 
@@ -245,7 +245,9 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
               <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.9rem' }}>Promotion Type</label>
               <select value={formData.promo_type} onChange={e => setFormData({...formData, promo_type: e.target.value})} style={{ width: '100%', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '6px' }}>
                 <option value="popup">Glass Popup Modal</option>
+                <option value="toast">Slide-in Corner Toast</option>
                 <option value="top_bar">Top Announcement Bar</option>
+                <option value="countdown">Countdown Timer Bar</option>
                 <option value="effect_confetti">Effect: Celebration Confetti</option>
                 <option value="effect_snow">Effect: Winter Snow</option>
               </select>
@@ -298,8 +300,26 @@ export default function PromotionsManagerClient({ initialPromotions, discoveredP
                     )}
                   </div>
                 )}
+                {formData.promo_type === 'countdown' && (
+                  <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <label style={{ display: 'block', marginBottom: '5px', color: '#A1A1AA', fontSize: '0.85rem' }}>Countdown End Date & Time</label>
+                    <input type="datetime-local" value={formData.content.countdown_date || ''} onChange={e => handleContentChange('countdown_date', e.target.value)} style={{ width: '100%', background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
+                  </div>
+                )}
               </div>
             )}
+
+            <div style={{ marginBottom: '20px', background: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <h3 style={{ fontSize: '1rem', marginBottom: '10px' }}>Behavioral Timing</h3>
+              <p style={{ fontSize: '0.85rem', color: '#A1A1AA', marginBottom: '10px' }}>When should this promotion appear?</p>
+              <select value={formData.content.timing || 'immediate'} onChange={e => handleContentChange('timing', e.target.value)} style={{ width: '100%', background: '#374151', border: 'none', color: '#fff', padding: '10px', borderRadius: '6px' }}>
+                <option value="immediate">Immediately on load</option>
+                <option value="delay_5">Time Delay (5 Seconds)</option>
+                <option value="delay_15">Time Delay (15 Seconds)</option>
+                <option value="scroll_50">Scroll Depth (After 50% scrolled)</option>
+                <option value="exit_intent">Exit Intent (When mouse leaves top of screen)</option>
+              </select>
+            </div>
 
             <div style={{ marginBottom: '20px', background: 'rgba(255,255,255,0.02)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <h3 style={{ fontSize: '1rem', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>

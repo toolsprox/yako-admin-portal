@@ -187,6 +187,10 @@ export default function TrackingManagerClient({ initialScripts, discoveredPaths 
                 <select value={formData.provider} onChange={e => setFormData({...formData, provider: e.target.value})} style={{ width: '100%', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '10px', borderRadius: '6px' }}>
                   <option value="google_analytics">Google Analytics (GA4)</option>
                   <option value="meta_pixel">Meta (Facebook) Pixel</option>
+                  <option value="tiktok_pixel">TikTok Pixel</option>
+                  <option value="linkedin_insight">LinkedIn Insight Tag</option>
+                  <option value="gtm">Google Tag Manager (GTM)</option>
+                  <option value="hotjar">Hotjar</option>
                   <option value="custom_html">Custom HTML/JS Script</option>
                 </select>
               </div>
