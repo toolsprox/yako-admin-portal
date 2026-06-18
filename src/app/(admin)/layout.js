@@ -23,6 +23,7 @@ export default async function AdminLayout({ children }) {
             <a href="/content" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Site Content</a>
             <a href="/intelligence" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Intelligence</a>
             <a href="/tracking" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Tracking & Ads</a>
+            <a href="/promotions" style={{ color: '#fff', textDecoration: 'none', fontWeight: 500 }}>Promotions</a>
           </div>
         </div>
         <span style={{ fontSize: '0.9rem', color: '#A1A1AA' }}>Logged in as {session.user.email}</span>
