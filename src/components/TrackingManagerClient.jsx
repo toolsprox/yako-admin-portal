@@ -175,10 +175,28 @@ export default function TrackingManagerClient({ initialScripts }) {
                   </select>
                   
                   {trigger.type === 'path' && (
-                    <input type="text" value={trigger.value} onChange={e => handleUpdateTrigger(index, 'value', e.target.value)} placeholder="e.g. /menu" style={{ flex: 1, background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
+                    <>
+                      <input type="text" list="path-options" value={trigger.value} onChange={e => handleUpdateTrigger(index, 'value', e.target.value)} placeholder="Select or type a path (e.g. /menu)" style={{ flex: 1, background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
+                      <datalist id="path-options">
+                        <option value="/">Home</option>
+                        <option value="/menu">Menu</option>
+                        <option value="/book">Reservations</option>
+                        <option value="/gallery">Gallery</option>
+                        <option value="/about">About Us</option>
+                      </datalist>
+                    </>
                   )}
                   {trigger.type === 'event' && (
-                    <input type="text" value={trigger.value} onChange={e => handleUpdateTrigger(index, 'value', e.target.value)} placeholder="e.g. reservation_complete" style={{ flex: 1, background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
+                    <>
+                      <input type="text" list="event-options" value={trigger.value} onChange={e => handleUpdateTrigger(index, 'value', e.target.value)} placeholder="Select or type an event (e.g. reservation_complete)" style={{ flex: 1, background: '#374151', border: 'none', color: '#fff', padding: '8px', borderRadius: '4px' }} />
+                      <datalist id="event-options">
+                        <option value="page_view">Page View</option>
+                        <option value="reservation_start">Reservation Started</option>
+                        <option value="reservation_complete">Reservation Completed</option>
+                        <option value="whatsapp_click">WhatsApp Clicked</option>
+                        <option value="menu_view">Menu Viewed</option>
+                      </datalist>
+                    </>
                   )}
                   {trigger.type === 'global' && (
                     <div style={{ flex: 1, padding: '8px', color: '#A1A1AA', fontSize: '0.9rem' }}>Loads globally across the site</div>
