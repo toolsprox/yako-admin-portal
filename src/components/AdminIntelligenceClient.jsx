@@ -21,7 +21,7 @@ export default function AdminIntelligenceClient({ initialVisitors, initialSessio
   // Derived metrics
   const totalVisitors = initialVisitors.length;
   const totalSessions = initialSessions.length;
-  const avgDuration = totalSessions > 0 ? Math.round(initialSessions.reduce((acc, s) => acc + s.duration_seconds, 0) / totalSessions) : 0;
+  const avgDuration = totalSessions > 0 ? Math.round(initialSessions.reduce((acc, s) => acc + (s.duration_seconds || 0), 0) / totalSessions) : 0;
   const highIntentCount = initialVisitors.filter(v => v.lead_score >= 50).length;
 
   const sources = initialSessions.reduce((acc, s) => {
